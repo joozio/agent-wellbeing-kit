@@ -1,0 +1,32 @@
+{
+  "quiet_hours": {
+    "morning_routine": {
+      "start": "07:00",
+      "end": "09:30",
+      "allowed": ["wellbeing-nudge"]
+    },
+    "evening": {
+      "start": "19:30",
+      "end": "07:00",
+      "allowed": ["wellbeing-nudge", "emergency"]
+    }
+  },
+  "emergency_keywords": ["server_down", "security", "data_loss", "payment_failure"],
+  "enabled": true,
+  "routine": {
+    "apps": {
+      "running": "Apple Fitness",
+      "yoga": "Apple Fitness+ (Yoga)",
+      "meditation": "Calm",
+      "learning": ["Brilliant", "Imprint"]
+    },
+    "wake_time": "07:00",
+    "bedtime": "23:00",
+    "location": "Your City"
+  },
+  "messaging": {
+    "channel": "cli",
+    "cli_prefix": "[wellbeing]",
+    "_comment": "Options: cli, imessage, telegram, slack, webhook. See SETUP.md for configuration."
+  }
+}
