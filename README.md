@@ -129,9 +129,7 @@ Python 3.8+ standard library only. Optional `curl` for weather. No pip install. 
 
 ## Background
 
-Built by [Pawel Jozefiak](https://thoughts.jock.pl) after realizing that building a 24/7 AI agent made him work more, not less. The agent was great at producing. The human was drowning in output. Morning routines broke. Sleep dropped. The fix wasn't turning the agent off. It was teaching it boundaries.
-
-Read the full story: [The AI Productivity Paradox](https://thoughts.jock.pl/p/ai-productivity-paradox-wellbeing-agent-age-2026)
+Built after realizing that running a 24/7 AI agent made me work more, not less. The agent was great at producing. I was drowning in output. Morning routines broke. Sleep dropped. The fix wasn't turning the agent off. It was teaching it boundaries.
 
 ## License
 
