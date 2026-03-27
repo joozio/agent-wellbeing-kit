@@ -11,15 +11,10 @@ Run modes:
     python3 evening-nudge.py --dry-run    # Print without sending
 """
 
-import json
 import sys
-from datetime import datetime, date
-from pathlib import Path
+from datetime import datetime
 
-WELLBEING_DIR = Path(__file__).resolve().parent
-STATE_FILE = WELLBEING_DIR / "state.json"
-CONFIG_FILE = WELLBEING_DIR / "config.json"
-
+from utils import load_state, save_state, load_config, already_sent_today
 from messaging import send_message
 
 EVENING_MESSAGES = [
@@ -33,34 +28,6 @@ BEDTIME_MESSAGES = [
     "Time to wind down. Good night.",
     "Bed now = full sleep. Good night.",
 ]
-
-
-def load_state():
-    try:
-        return json.loads(STATE_FILE.read_text())
-    except Exception:
-        return {}
-
-
-def save_state(state):
-    STATE_FILE.write_text(json.dumps(state, indent=2))
-
-
-def load_config():
-    try:
-        return json.loads(CONFIG_FILE.read_text())
-    except Exception:
-        return {}
-
-
-def already_sent_today(state, key):
-    sent_at = state.get(key)
-    if not sent_at:
-        return False
-    try:
-        return datetime.fromisoformat(sent_at).date() == date.today()
-    except Exception:
-        return False
 
 
 def pick_message(messages):
@@ -97,7 +64,6 @@ def bedtime_nudge(dry_run=False):
     bedtime = config.get("routine", {}).get("bedtime", "23:00")
     wake_time = config.get("routine", {}).get("wake_time", "07:00")
 
-    # Calculate sleep hours
     bh, bm = map(int, bedtime.split(":"))
     wh, wm = map(int, wake_time.split(":"))
     sleep_hours = (wh + wm/60) - (bh + bm/60)

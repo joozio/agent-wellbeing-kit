@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Wellbeing Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background: #0d1117; color: #c9d1d9; padding: 2rem; max-width: 900px; margin: 0 auto; }
+  h1 { color: #58a6ff; font-size: 1.4rem; margin-bottom: 1.5rem; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 1.2rem; }
+  .card h2 { font-size: 0.85rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.8rem; }
+  .card .value { font-size: 1.8rem; font-weight: 600; }
+  .ok { color: #3fb950; }
+  .warn { color: #d29922; }
+  .err { color: #f85149; }
+  .muted { color: #8b949e; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; margin-top: 0.8rem; }
+  .bar-chart .bar { flex: 1; background: #238636; border-radius: 3px 3px 0 0; min-height: 4px; position: relative; }
+  .bar-chart .bar.missed { background: #30363d; }
+  .bar-chart .label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 0.65rem; color: #8b949e; }
+  .nudge-list { list-style: none; }
+  .nudge-list li { padding: 0.3rem 0; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; }
+  .nudge-list .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .nudge-list .dot.sent { background: #3fb950; }
+  .nudge-list .dot.pending { background: #30363d; }
+  .wide { grid-column: 1 / -1; }
+  .error-item { padding: 0.3rem 0; font-size: 0.85rem; font-family: monospace; }
+  .load-section { text-align: center; padding: 3rem; }
+  .load-section input { margin: 1rem 0; }
+  .load-section button { background: #238636; color: #fff; border: none; padding: 0.6rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+  .load-section button:hover { background: #2ea043; }
+  .footer { margin-top: 2rem; text-align: center; font-size: 0.75rem; color: #484f58; }
+</style>
+</head>
+<body>
+
+<h1>Agent Wellbeing Dashboard</h1>
+
+<div id="loader" class="load-section">
+  <p>Load your <code>state.json</code> to see the dashboard.</p>
+  <input type="file" id="file-input" accept=".json">
+  <br>
+  <button onclick="loadSample()">Load sample data</button>
+</div>
+
+<div id="dashboard" style="display:none">
+  <div class="grid">
+    <div class="card">
+      <h2>Quiet Hours</h2>
+      <div class="value" id="quiet-status">--</div>
+    </div>
+    <div class="card">
+      <h2>Today's Nudges</h2>
+      <ul class="nudge-list" id="nudge-list"></ul>
+    </div>
+    <div class="card wide">
+      <h2>This Week - Morning Routine</h2>
+      <div class="bar-chart" id="week-chart"></div>
+    </div>
+    <div class="card">
+      <h2>Memory Health</h2>
+      <div class="value" id="memory-status">--</div>
+      <div class="muted" id="memory-detail"></div>
+    </div>
+    <div class="card">
+      <h2>Error Registry</h2>
+      <div class="value" id="error-status">--</div>
+      <div id="error-detail"></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">Agent Wellbeing Kit - github.com/joozio/agent-wellbeing-kit</div>
+
+<script>
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+function render(state) {
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+
+  // Quiet hours
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes();
+  const t = h * 60 + m;
+  let qStatus = '<span class="ok">Active</span>';
+  // Simple check against common quiet windows
+  if ((t >= 420 && t < 570) || t >= 1170 || t < 420) {
+    qStatus = '<span class="warn">Quiet Hours</span>';
+  }
+  document.getElementById('quiet-status').innerHTML = qStatus;
+
+  // Today's nudges
+  const today = new Date().toISOString().slice(0, 10);
+  const nudges = [
+    { name: 'Morning', key: 'morning_nudge_sent_at' },
+    { name: 'Followup', key: 'morning_followup_sent_at' },
+    { name: 'Evening', key: 'evening_nudge_sent_at' },
+    { name: 'Bedtime', key: 'bedtime_nudge_sent_at' },
+  ];
+  const list = document.getElementById('nudge-list');
+  list.innerHTML = nudges.map(n => {
+    const sent = state[n.key] && state[n.key].startsWith(today);
+    return `<li><span class="dot ${sent ? 'sent' : 'pending'}"></span>${n.name}</li>`;
+  }).join('');
+
+  // Week chart
+  const weekly = state.weekly_stats || {};
+  const routineDays = new Set(weekly.routine_days || []);
+  const chart = document.getElementById('week-chart');
+  const monday = new Date();
+  monday.setDate(monday.getDate() - monday.getDay() + 1);
+  chart.innerHTML = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(d.getDate() + i);
+    const ds = d.toISOString().slice(0, 10);
+    const done = routineDays.has(ds);
+    const isPast = d <= now;
+    const bar = document.createElement('div');
+    bar.className = `bar ${done ? '' : 'missed'}`;
+    bar.style.height = done ? '100%' : (isPast ? '15%' : '4px');
+    bar.innerHTML = `<span class="label">${DAYS[i]}</span>`;
+    chart.appendChild(bar);
+  }
+
+  // Memory health
+  const mem = state.memory_health || {};
+  const memEl = document.getElementById('memory-status');
+  const memDet = document.getElementById('memory-detail');
+  if (mem.overall) {
+    const cls = mem.overall === 'healthy' ? 'ok' : mem.overall === 'degraded' ? 'warn' : 'err';
+    memEl.innerHTML = `<span class="${cls}">${mem.overall.toUpperCase()}</span>`;
+    const s = mem.summary || {};
+    memDet.textContent = `${s.total || 0} files checked, ${s.warn || 0} warnings`;
+  } else {
+    memEl.innerHTML = '<span class="muted">No data</span>';
+    memDet.textContent = 'Run: python3 memory_health.py --check';
+  }
+
+  // Error registry
+  const err = state.error_registry || {};
+  const errEl = document.getElementById('error-status');
+  const errDet = document.getElementById('error-detail');
+  if (err.last_scan) {
+    const hasIssues = (err.repeating_count || 0) > 0 || (err.loop_count || 0) > 0;
+    const cls = hasIssues ? 'warn' : 'ok';
+    errEl.innerHTML = `<span class="${cls}">${err.total_errors || 0} errors</span>`;
+    const alerts = err.alerts || [];
+    errDet.innerHTML = alerts.length
+      ? alerts.map(a => `<div class="error-item err">${a}</div>`).join('')
+      : '<div class="muted">All clear</div>';
+  } else {
+    errEl.innerHTML = '<span class="muted">No data</span>';
+    errDet.innerHTML = '<div class="muted">Run: python3 error_registry.py --scan log.txt</div>';
+  }
+}
+
+function loadSample() {
+  render({
+    morning_nudge_sent_at: new Date().toISOString(),
+    evening_nudge_sent_at: new Date().toISOString(),
+    weekly_stats: {
+      routine_days: (() => {
+        const days = [];
+        const mon = new Date(); mon.setDate(mon.getDate() - mon.getDay() + 1);
+        for (let i = 0; i < 5; i++) {
+          const d = new Date(mon); d.setDate(d.getDate() + i);
+          if (Math.random() > 0.3) days.push(d.toISOString().slice(0, 10));
+        }
+        return days;
+      })()
+    },
+    memory_health: { overall: 'degraded', summary: { total: 4, ok: 3, warn: 1, error: 0 } },
+    error_registry: { last_scan: new Date().toISOString(), total_errors: 3, repeating_count: 1, loop_count: 0, alerts: ['1 repeating error(s) detected'] }
+  });
+}
+
+document.getElementById('file-input').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try { render(JSON.parse(ev.target.result)); }
+    catch (err) { alert('Invalid JSON file'); }
+  };
+  reader.readAsText(file);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+# Agent Wellbeing Kit - cron schedule
+# Copy these lines to your crontab: crontab -e
+
+0 7 * * *   /path/to/agent-wellbeing-kit/dispatch.sh
+0 8 * * 1-5 /path/to/agent-wellbeing-kit/dispatch.sh
+30 19 * * * /path/to/agent-wellbeing-kit/dispatch.sh
+0 23 * * *  /path/to/agent-wellbeing-kit/dispatch.sh

@@ -4,21 +4,24 @@ Get running in 5 minutes.
 
 ## Quick Start
 
-1. Copy this folder into your agent's automation directory:
-   ```
-   cp -r agent-wellbeing-kit ~/your-agent/automation/wellbeing/
+1. Copy the config template:
+   ```bash
+   cp config.example.json config.json
    ```
 
 2. Edit `config.json`:
-   - Set your `location` (for weather-based morning suggestions)
+   - Set your `location` (city name, for weather-based morning suggestions)
    - Set your `wake_time` and `bedtime`
    - Choose your `messaging.channel` (see Messaging section below)
+   - Optionally configure `error_registry` thresholds
+   - Optionally add `memory_health.paths` for memory monitoring
 
 3. Test it:
-   ```
+   ```bash
    python3 morning-nudge.py --dry-run
    python3 evening-nudge.py --dry-run
    python3 quiet_hours.py --status
+   python3 error_registry.py --summary
    ```
 
 4. Schedule with cron or LaunchAgent (see Scheduling section below).
@@ -27,13 +30,18 @@ Get running in 5 minutes.
 
 | File | What it does |
 |------|-------------|
-| `config.json` | All settings: quiet hours, routine, messaging channel |
+| `config.example.json` | Template config (copy to `config.json`) |
+| `utils.py` | Shared utilities (state, config loading) |
 | `morning-nudge.py` | 7:00 AM nudge with weather + activity suggestion |
 | `evening-nudge.py` | 19:30 wind-down + 23:00 bedtime nudge |
-| `weekly-checkin.py` | Sunday summary: routine days, CLI-free evenings, bedtime adherence |
+| `weekly-checkin.py` | Sunday summary: routine days, screen-free evenings, bedtime adherence |
 | `quiet_hours.py` | Message gating library + CLI tool |
+| `error_registry.py` | Silent failure detection for agent logs |
+| `memory_health.py` | Memory file health checker |
+| `messaging.py` | Multi-channel messaging abstraction |
 | `dispatch.sh` | Single entry point for all nudges |
-| `state.json` | Auto-created. Tracks sent nudges and weekly stats |
+| `dashboard.html` | Visual overview (open in browser, load state.json) |
+| `state.json` | Auto-created. Tracks sent nudges, weekly stats, error/memory state |
 
 ## Messaging Channels
 
@@ -85,41 +93,17 @@ Sends JSON: `{ "text": "message", "type": "morning|evening|bedtime|checkin" }`
 
 ### macOS (LaunchAgent)
 
-Save as `~/Library/LaunchAgents/com.agent.wellbeing.plist`:
+See `examples/launchagent.plist` for a ready-to-use template. Copy it, update the path, and load:
 
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key>
-  <string>com.agent.wellbeing</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>/bin/bash</string>
-    <string>/path/to/agent-wellbeing-kit/dispatch.sh</string>
-  </array>
-  <key>StartCalendarInterval</key>
-  <array>
-    <dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>0</integer></dict>
-    <dict><key>Hour</key><integer>8</integer><key>Minute</key><integer>0</integer></dict>
-    <dict><key>Hour</key><integer>19</integer><key>Minute</key><integer>30</integer></dict>
-    <dict><key>Hour</key><integer>23</integer><key>Minute</key><integer>0</integer></dict>
-  </array>
-  <key>StandardOutPath</key>
-  <string>/tmp/wellbeing.log</string>
-  <key>StandardErrorPath</key>
-  <string>/tmp/wellbeing-error.log</string>
-</dict>
-</plist>
-```
-
-Load it:
 ```bash
+cp examples/launchagent.plist ~/Library/LaunchAgents/com.agent.wellbeing.plist
+# Edit the path in the plist file
 launchctl load ~/Library/LaunchAgents/com.agent.wellbeing.plist
 ```
 
 ### Linux (cron)
+
+See `examples/crontab.example` or add these lines to your crontab (`crontab -e`):
 
 ```
 0 7 * * * /path/to/agent-wellbeing-kit/dispatch.sh
@@ -130,12 +114,7 @@ launchctl load ~/Library/LaunchAgents/com.agent.wellbeing.plist
 
 ### Claude Code / AI Agent
 
-Point your agent at this folder in CLAUDE.md:
-```
-## Wellbeing
-Wellbeing system in automation/wellbeing/. Config: config.json.
-Quiet hours check: python3 quiet_hours.py --check --tag "your-tag"
-```
+Point your agent at this folder in CLAUDE.md. See `examples/CLAUDE.md` for a ready-to-paste snippet.
 
 Your agent can call `quiet_hours.py --check` before sending notifications to respect your boundaries.
 
@@ -147,8 +126,10 @@ Everything is in `config.json`. Common changes:
 - **No morning followup**: Remove the 08:00 schedule entry
 - **Different bedtime**: Change `routine.bedtime` and the 23:00 schedule
 - **Add lunch break**: Add a new quiet_hours window
-- **Change activities**: Edit `routine.apps` with your preferred apps
+- **Change activities**: Edit `routine.activities` with your preferred activities
 - **Emergency overrides**: Add keywords to `emergency_keywords`
+- **Error sensitivity**: Adjust `error_registry.repeat_threshold` and `loop_threshold`
+- **Memory monitoring**: Add file paths to `memory_health.paths`
 
 ## Philosophy
 

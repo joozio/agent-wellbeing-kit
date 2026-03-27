@@ -4,35 +4,19 @@ Weekly Wellbeing Check-in
 
 Summarizes the week's routine adherence:
 - Morning routine days
-- CLI-free evenings
+- Screen-free evenings
 - Bedtime adherence
-- Current streak
 
 Run modes:
     python3 weekly-checkin.py              # Send check-in
     python3 weekly-checkin.py --dry-run    # Print without sending
 """
 
-import json
 import sys
-from datetime import datetime, date, timedelta
-from pathlib import Path
+from datetime import date, timedelta
 
-WELLBEING_DIR = Path(__file__).resolve().parent
-STATE_FILE = WELLBEING_DIR / "state.json"
-
+from utils import load_state, save_state
 from messaging import send_message
-
-
-def load_state():
-    try:
-        return json.loads(STATE_FILE.read_text())
-    except Exception:
-        return {}
-
-
-def save_state(state):
-    STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
 def get_week_dates():
@@ -49,21 +33,17 @@ def generate_checkin(dry_run=False):
     week_dates = get_week_dates()
     total_days = min(7, (date.today() - week_dates[0]).days + 1)
 
-    # Morning routine days
     routine_days = weekly.get("routine_days", [])
     routine_count = len([d for d in routine_days if d in [x.isoformat() for x in week_dates]])
 
-    # CLI-free evenings
     evening_sessions = weekly.get("evening_cli_sessions", [])
     cli_free_count = total_days - len([d for d in evening_sessions if d in [x.isoformat() for x in week_dates]])
 
-    # Bedtime adherence
     bedtime_breaches = weekly.get("bedtime_breaches", [])
     bedtime_good = total_days - len([d for d in bedtime_breaches if d in [x.isoformat() for x in week_dates]])
 
     streak = weekly.get("streak", 0)
 
-    # Build message
     lines = [f"Weekly check-in ({week_dates[0].strftime('%b %d')} - {week_dates[-1].strftime('%b %d')}):"]
     lines.append(f"Morning routine: {routine_count}/{total_days} days")
     lines.append(f"Screen-free evenings: {cli_free_count}/{total_days}")
@@ -72,7 +52,6 @@ def generate_checkin(dry_run=False):
     if streak > 0:
         lines.append(f"Streak: {streak} days")
 
-    # Overall assessment
     score = routine_count + cli_free_count + bedtime_good
     max_score = total_days * 3
     if max_score > 0:

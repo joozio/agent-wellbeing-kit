@@ -3,7 +3,7 @@
 Morning Routine Nudge
 
 Sends a brief, warm message to start your morning routine.
-Includes weather for your location and suggests run vs yoga based on conditions.
+Includes weather for your location and suggests outdoor vs indoor activity.
 
 Run modes:
     python3 morning-nudge.py              # Main morning nudge
@@ -15,36 +15,14 @@ import json
 import subprocess
 import sys
 from datetime import datetime, date
-from pathlib import Path
 
-WELLBEING_DIR = Path(__file__).resolve().parent
-STATE_FILE = WELLBEING_DIR / "state.json"
-CONFIG_FILE = WELLBEING_DIR / "config.json"
-
+from utils import load_state, save_state, load_config, already_sent_today
 from messaging import send_message
-
-
-def load_state():
-    try:
-        return json.loads(STATE_FILE.read_text())
-    except Exception:
-        return {}
-
-
-def save_state(state):
-    STATE_FILE.write_text(json.dumps(state, indent=2))
-
-
-def load_config():
-    try:
-        return json.loads(CONFIG_FILE.read_text())
-    except Exception:
-        return {}
 
 
 def get_weather(location):
     """Fetch current weather via wttr.in (free, no API key)."""
-    if not location or location == "Your City":
+    if not location:
         return None
     try:
         result = subprocess.run(
@@ -67,23 +45,17 @@ def get_weather(location):
         return None
 
 
-def suggest_activity(weather):
-    """Suggest run or yoga based on weather."""
+def suggest_activity(weather, config):
+    """Suggest activity based on weather and config."""
+    activities = config.get("routine", {}).get("activities", {})
+    outdoor = activities.get("outdoor", "running")
+    indoor = activities.get("indoor", "yoga or stretching")
+
     if weather is None:
-        return "run or yoga"
+        return f"{outdoor} or {indoor}"
     if weather["rainy"] or weather["temp"] < -5:
-        return "yoga"
-    return "run"
-
-
-def already_sent_today(state, key):
-    sent_at = state.get(key)
-    if not sent_at:
-        return False
-    try:
-        return datetime.fromisoformat(sent_at).date() == date.today()
-    except Exception:
-        return False
+        return indoor
+    return outdoor
 
 
 def main_nudge(dry_run=False):
@@ -104,7 +76,7 @@ def main_nudge(dry_run=False):
         else:
             msg = "Morning. Routine when you're ready. Enjoy the day."
     else:
-        activity = suggest_activity(weather)
+        activity = suggest_activity(weather, config)
         if weather:
             msg = f"Morning. {weather['temp']}C, {weather['desc']}. Good day for {activity}."
         else:
@@ -116,7 +88,7 @@ def main_nudge(dry_run=False):
 
     if send_message(msg, "morning"):
         state["morning_nudge_sent_at"] = datetime.now().isoformat()
-        state["today_routine_suggestion"] = suggest_activity(weather)
+        state["today_routine_suggestion"] = suggest_activity(weather, config)
         weekly = state.setdefault("weekly_stats", {})
         routine_days = weekly.setdefault("routine_days", [])
         today_str = date.today().isoformat()
