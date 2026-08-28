@@ -108,7 +108,14 @@ def followup_nudge(dry_run=False):
         print("Followup already sent today, skipping")
         return
 
-    msg = "Time to move."
+    followup_defaults = [
+        "Time to move.",
+        "Still time for a quick session. Go.",
+        "Body first, then the desk.",
+    ]
+    custom = load_config().get("messages", {}).get("followup", [])
+    pool = custom if custom else followup_defaults
+    msg = pool[datetime.now().timetuple().tm_yday % len(pool)]
 
     if dry_run:
         print(f"[dry-run] Would send: {msg}")

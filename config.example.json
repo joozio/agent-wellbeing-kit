@@ -26,6 +26,12 @@
     "channel": "cli",
     "_comment": "Options: cli, imessage, telegram, slack, webhook. See SETUP.md."
   },
+  "messages": {
+    "_comment": "Optional. Non-empty arrays replace the built-in rotation pools.",
+    "evening": [],
+    "bedtime": [],
+    "followup": []
+  },
   "error_registry": {
     "repeat_threshold": 3,
     "loop_threshold": 5,

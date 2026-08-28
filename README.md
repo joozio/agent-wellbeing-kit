@@ -72,7 +72,20 @@ python3 memory_health.py --check ~/.claude/memory/
 
 ## Use With Your AI Agent
 
-Add to CLAUDE.md (or equivalent):
+Two ready-made agent skills ship in [skills/](skills/):
+
+- **wellbeing-boundaries** - the agent checks quiet hours before every outbound message, queues suppressed ones, and knows what counts as a real emergency.
+- **agent-health-check** - the agent runs the error and memory scans, interprets the results, and reports at a high level.
+
+For Claude Code, copy them into your skills directory:
+
+```bash
+cp -r skills/wellbeing-boundaries skills/agent-health-check ~/.claude/skills/
+```
+
+Then edit the `/path/to/agent-wellbeing-kit` placeholders to your install path. The SKILL.md format is plain markdown with YAML frontmatter, so any agent framework that reads instruction files can use them.
+
+Prefer a minimal setup? Add to CLAUDE.md (or equivalent):
 ```markdown
 ## Wellbeing
 Before sending notifications: python3 quiet_hours.py --check --tag "your-tag"
@@ -133,6 +146,7 @@ make smoke    # dry-run every nudge script
 | `messaging.py` | Multi-channel messaging abstraction |
 | `dispatch.sh` | Cron/LaunchAgent entry point |
 | `dashboard.html` | Visual overview (open in browser) |
+| `skills/` | Agent skills (SKILL.md) for Claude Code and friends |
 
 ## Background
 

@@ -114,9 +114,9 @@ See `examples/crontab.example` or add these lines to your crontab (`crontab -e`)
 
 ### Claude Code / AI Agent
 
-Point your agent at this folder in CLAUDE.md. See `examples/CLAUDE.md` for a ready-to-paste snippet.
+The `skills/` directory ships two agent skills: `wellbeing-boundaries` (quiet-hours gating for outbound messages) and `agent-health-check` (error + memory scans with interpretation). Copy them into `~/.claude/skills/` and update the kit path inside each SKILL.md.
 
-Your agent can call `quiet_hours.py --check` before sending notifications to respect your boundaries.
+Alternatively, point your agent at this folder in CLAUDE.md. See `examples/CLAUDE.md` for a ready-to-paste snippet. Your agent can call `quiet_hours.py --check` before sending notifications to respect your boundaries.
 
 ## Customization
 
@@ -127,6 +127,7 @@ Everything is in `config.json`. Common changes:
 - **Different bedtime**: Change `routine.bedtime` and the 23:00 schedule
 - **Add lunch break**: Add a new quiet_hours window
 - **Change activities**: Edit `routine.activities` with your preferred activities
+- **Custom nudge wording**: Fill `messages.evening`, `messages.bedtime`, or `messages.followup` with your own lines; non-empty arrays replace the built-in rotation pools
 - **Emergency overrides**: Add keywords to `emergency_keywords`
 - **Error sensitivity**: Adjust `error_registry.repeat_threshold` and `loop_threshold`
 - **Memory monitoring**: Add file paths to `memory_health.paths`
