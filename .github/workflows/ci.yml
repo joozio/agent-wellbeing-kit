@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Unit tests
+        run: python3 -m unittest discover -p "test_*.py" -v
+      - name: Smoke test (dry runs)
+        run: |
+          cp config.example.json config.json
+          python3 morning-nudge.py --dry-run
+          python3 evening-nudge.py --dry-run
+          python3 evening-nudge.py --bedtime --dry-run
+          python3 weekly-checkin.py --dry-run
+          python3 quiet_hours.py --status
+          python3 memory_health.py --check || true
+          echo "ERROR test line" | python3 error_registry.py --feed || true

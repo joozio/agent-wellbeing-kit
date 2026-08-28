@@ -49,13 +49,16 @@ def generate_checkin(dry_run=False):
     lines.append(f"Screen-free evenings: {cli_free_count}/{total_days}")
     lines.append(f"In bed on time: {bedtime_good}/{total_days}")
 
-    if streak > 0:
-        lines.append(f"Streak: {streak} days")
-
     score = routine_count + cli_free_count + bedtime_good
     max_score = total_days * 3
+    pct = score / max_score if max_score > 0 else 0
+
+    # Streak = consecutive weeks scoring 60%+ overall
+    streak = streak + 1 if pct >= 0.6 else 0
+    if streak > 1:
+        lines.append(f"Streak: {streak} good weeks in a row")
+
     if max_score > 0:
-        pct = score / max_score
         if pct >= 0.8:
             lines.append("Strong week.")
         elif pct >= 0.6:
@@ -75,7 +78,6 @@ def generate_checkin(dry_run=False):
         state["weekly_stats"] = {
             "week_start": (date.today() + timedelta(days=1)).isoformat(),
             "routine_days": [],
-            "cli_free_evenings": [],
             "evening_cli_sessions": [],
             "bedtime_breaches": [],
             "streak": streak,

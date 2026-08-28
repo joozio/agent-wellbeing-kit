@@ -28,7 +28,6 @@
   },
   "error_registry": {
     "repeat_threshold": 3,
-    "window_minutes": 10,
     "loop_threshold": 5,
     "log_patterns": ["ERROR", "FAIL", "Exception", "Traceback"]
   },

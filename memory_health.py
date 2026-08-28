@@ -15,9 +15,8 @@ Library usage:
 """
 
 import json
-import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 from utils import load_config, load_state, save_state

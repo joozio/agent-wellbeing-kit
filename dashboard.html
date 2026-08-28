@@ -111,7 +111,7 @@ function render(state) {
   const routineDays = new Set(weekly.routine_days || []);
   const chart = document.getElementById('week-chart');
   const monday = new Date();
-  monday.setDate(monday.getDate() - monday.getDay() + 1);
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
   chart.innerHTML = '';
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
@@ -165,7 +165,7 @@ function loadSample() {
     weekly_stats: {
       routine_days: (() => {
         const days = [];
-        const mon = new Date(); mon.setDate(mon.getDate() - mon.getDay() + 1);
+        const mon = new Date(); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
         for (let i = 0; i < 5; i++) {
           const d = new Date(mon); d.setDate(d.getDate() + i);
           if (Math.random() > 0.3) days.push(d.toISOString().slice(0, 10));

@@ -22,6 +22,11 @@ def _load_config():
         return {}
 
 
+def _applescript_escape(text):
+    """Escape a string for embedding in an AppleScript double-quoted literal."""
+    return text.replace("\\", "\\\\").replace('"', '\\"')
+
+
 def send_message(text, msg_type="nudge"):
     """Send a message via the configured channel.
 
@@ -45,7 +50,11 @@ def send_message(text, msg_type="nudge"):
             print("Error: imessage_recipient not set in config.json", file=sys.stderr)
             return False
         try:
-            script = f'tell application "Messages" to send "{text}" to buddy "{recipient}" of (1st account whose service type = iMessage)'
+            script = (
+                f'tell application "Messages" to send "{_applescript_escape(text)}" '
+                f'to buddy "{_applescript_escape(recipient)}" '
+                f'of (1st account whose service type = iMessage)'
+            )
             result = subprocess.run(
                 ["osascript", "-e", script],
                 capture_output=True, text=True, timeout=30

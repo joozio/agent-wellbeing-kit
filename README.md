@@ -109,7 +109,14 @@ Decent week. Room to improve.
 
 ## No Dependencies
 
-Python 3.8+ standard library only. Optional `curl` for weather. No pip install. No Docker. No accounts. No cloud. Runs on your machine, reads your config, that's it.
+Python 3.8+ standard library only. No pip install. No Docker. No accounts. No cloud. Runs on your machine, reads your config, that's it.
+
+## Tests
+
+```bash
+make test     # unit tests
+make smoke    # dry-run every nudge script
+```
 
 ## Files
 

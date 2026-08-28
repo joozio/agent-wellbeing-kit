@@ -2,6 +2,7 @@
 """Shared utilities for the wellbeing kit."""
 
 import json
+import os
 from datetime import datetime, date
 from pathlib import Path
 
@@ -19,8 +20,10 @@ def load_state():
 
 
 def save_state(state):
-    """Write state back to state.json."""
-    STATE_FILE.write_text(json.dumps(state, indent=2))
+    """Write state back to state.json atomically (temp file + rename)."""
+    tmp = STATE_FILE.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(state, indent=2))
+    os.replace(tmp, STATE_FILE)
 
 
 def load_config():

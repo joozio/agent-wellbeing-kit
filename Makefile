@@ -1,8 +1,12 @@
-.PHONY: test status errors health dashboard
+.PHONY: test smoke status errors health dashboard
 
 test:
+	python3 -m unittest discover -p "test_*.py" -v
+
+smoke:
 	python3 morning-nudge.py --dry-run
 	python3 evening-nudge.py --dry-run
+	python3 weekly-checkin.py --dry-run
 	python3 quiet_hours.py --status
 
 status:

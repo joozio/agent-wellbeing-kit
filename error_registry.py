@@ -19,7 +19,7 @@ import json
 import re
 import sys
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 from utils import load_config, load_state, save_state
@@ -32,8 +32,8 @@ def _normalize(line):
     repeated errors with different metadata match the same fingerprint.
     """
     line = line.strip().lower()
-    # Strip ISO timestamps
-    line = re.sub(r'\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[.\d]*[z]?', '', line)
+    # Strip ISO timestamps (line is lowercased above, so match a lowercase 't')
+    line = re.sub(r'\d{4}-\d{2}-\d{2}[t ]\d{2}:\d{2}:\d{2}[.\d]*z?', '', line)
     # Strip UUIDs
     line = re.sub(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', '<id>', line)
     # Strip hex IDs (8+ chars)

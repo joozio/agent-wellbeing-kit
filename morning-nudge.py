@@ -12,8 +12,9 @@ Run modes:
 """
 
 import json
-import subprocess
 import sys
+import urllib.parse
+import urllib.request
 from datetime import datetime, date
 
 from utils import load_state, save_state, load_config, already_sent_today
@@ -25,13 +26,9 @@ def get_weather(location):
     if not location:
         return None
     try:
-        result = subprocess.run(
-            ["curl", "-s", "--max-time", "5", f"wttr.in/{location}?format=j1"],
-            capture_output=True, text=True, timeout=10
-        )
-        if result.returncode != 0:
-            return None
-        data = json.loads(result.stdout)
+        url = f"https://wttr.in/{urllib.parse.quote(location)}?format=j1"
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            data = json.loads(resp.read().decode())
         current = data["current_condition"][0]
         temp_c = current["temp_C"]
         desc = current["weatherDesc"][0]["value"].lower()

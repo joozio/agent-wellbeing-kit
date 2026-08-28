@@ -14,7 +14,7 @@ Run modes:
 import sys
 from datetime import datetime
 
-from utils import load_state, save_state, load_config, already_sent_today
+from utils import load_state, save_state, already_sent_today
 from messaging import send_message
 
 EVENING_MESSAGES = [
@@ -59,16 +59,6 @@ def bedtime_nudge(dry_run=False):
     if not dry_run and already_sent_today(state, "bedtime_nudge_sent_at"):
         print("Bedtime nudge already sent today, skipping")
         return
-
-    config = load_config()
-    bedtime = config.get("routine", {}).get("bedtime", "23:00")
-    wake_time = config.get("routine", {}).get("wake_time", "07:00")
-
-    bh, bm = map(int, bedtime.split(":"))
-    wh, wm = map(int, wake_time.split(":"))
-    sleep_hours = (wh + wm/60) - (bh + bm/60)
-    if sleep_hours < 0:
-        sleep_hours += 24
 
     msg = pick_message(BEDTIME_MESSAGES)
 
