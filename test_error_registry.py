@@ -1,7 +1,16 @@
 #!/usr/bin/env python3
 """Tests for error_registry module."""
 
+import io
+import sys
+import tempfile
 import unittest
+from contextlib import redirect_stdout
+from pathlib import Path
+from unittest.mock import patch
+
+import error_registry
+import utils
 from error_registry import _normalize, check_errors
 
 CONFIG = {
@@ -71,6 +80,50 @@ class TestCheckErrors(unittest.TestCase):
         ]
         results = check_errors(lines, CONFIG)
         self.assertEqual(len(results["repeating"]), 1)
+
+
+class TestCli(unittest.TestCase):
+    """Agents read the exit code: 0 clean, 1 alerts, 2 usage."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmpdir.cleanup)
+        self.dir = Path(self.tmpdir.name)
+        for p in (patch.object(utils, "STATE_FILE", self.dir / "state.json"),
+                  patch.object(error_registry, "load_config", return_value=CONFIG)):
+            p.start()
+            self.addCleanup(p.stop)
+
+    def run_cli(self, *argv):
+        out = io.StringIO()
+        with patch.object(sys, "argv", ["error_registry.py", *argv]), redirect_stdout(out):
+            with self.assertRaises(SystemExit) as cm:
+                error_registry.main()
+        return cm.exception.code, out.getvalue()
+
+    def scan(self, text):
+        log = self.dir / "agent.log"
+        log.write_bytes(text if isinstance(text, bytes) else text.encode())
+        return self.run_cli("--scan", str(log))
+
+    def test_clean_log_exits_zero(self):
+        code, out = self.scan("all good\n")
+        self.assertEqual(code, 0)
+        self.assertIn("Clean", out)
+
+    def test_repeating_errors_exit_one_and_persist(self):
+        code, _ = self.scan("ERROR boom\n" * 3)
+        self.assertEqual(code, 1)
+        self.assertEqual(utils.load_state()["error_registry"]["repeating_count"], 1)
+
+    def test_missing_file_exits_one(self):
+        code, _ = self.run_cli("--scan", str(self.dir / "nope.log"))
+        self.assertEqual(code, 1)
+
+    def test_no_args_exits_two(self):
+        with patch("sys.stdout", io.StringIO()):
+            code, _ = self.run_cli()
+        self.assertEqual(code, 2)
 
 
 if __name__ == "__main__":

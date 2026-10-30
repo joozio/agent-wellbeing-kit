@@ -3,6 +3,8 @@
 
 import json
 import os
+import sys
+import tempfile
 from datetime import datetime, date
 from pathlib import Path
 
@@ -20,17 +22,32 @@ def load_state():
 
 
 def save_state(state):
-    """Write state back to state.json atomically (temp file + rename)."""
-    tmp = STATE_FILE.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(state, indent=2))
-    os.replace(tmp, STATE_FILE)
+    """Write state back to state.json atomically (temp file + rename).
+
+    The temp file name is unique per call, so two processes saving at once
+    (a cron nudge and an agent's health check) cannot rename each other's file.
+    """
+    fd, tmp = tempfile.mkstemp(dir=str(STATE_FILE.parent), prefix=".state.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(json.dumps(state, indent=2))
+        os.replace(tmp, str(STATE_FILE))
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
 
 
 def load_config():
     """Load configuration from config.json."""
     try:
         return json.loads(CONFIG_FILE.read_text())
-    except Exception:
+    except FileNotFoundError:
+        return {}
+    except Exception as e:
+        print(f"Warning: cannot read {CONFIG_FILE} ({e}). Using defaults.", file=sys.stderr)
         return {}
 
 

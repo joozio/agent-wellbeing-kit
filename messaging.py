@@ -17,10 +17,17 @@ CONFIG_FILE = Path(__file__).resolve().parent / "config.json"
 
 
 def _load_config():
+    """Return the config dict, {} if config.json is absent, None if it is broken."""
     try:
-        return json.loads(CONFIG_FILE.read_text())
-    except Exception:
+        config = json.loads(CONFIG_FILE.read_text())
+        if not isinstance(config, dict):
+            raise ValueError("top level must be a JSON object")
+        return config
+    except FileNotFoundError:
         return {}
+    except Exception as e:
+        print(f"Error: cannot read {CONFIG_FILE} ({e})", file=sys.stderr)
+        return None
 
 
 SECRET_KEYS = ("telegram_bot_token", "slack_webhook_url", "webhook_url")
@@ -54,6 +61,9 @@ def send_message(text, msg_type="nudge"):
         True if sent successfully
     """
     config = _load_config()
+    if config is None:
+        # Unknown channel: report failure rather than print to stdout and claim success.
+        return False
     messaging = config.get("messaging", {"channel": "cli"})
     channel = messaging.get("channel", "cli")
     _warn_if_config_exposed(messaging)

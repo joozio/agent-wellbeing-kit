@@ -23,14 +23,27 @@ from pathlib import Path
 
 WELLBEING_DIR = Path(__file__).resolve().parent
 CONFIG_FILE = WELLBEING_DIR / "config.json"
+EXAMPLE_CONFIG_FILE = WELLBEING_DIR / "config.example.json"
 SUPPRESSED_LOG = WELLBEING_DIR / "suppressed.jsonl"
 
 
 def _load_config():
     try:
-        return json.loads(CONFIG_FILE.read_text())
-    except Exception:
+        config = json.loads(CONFIG_FILE.read_text())
+        if not isinstance(config, dict):
+            raise ValueError("top level must be a JSON object")
+        return config
+    except FileNotFoundError:
         return {"enabled": False}
+    except Exception as e:
+        # A typo in config.json must not silently turn quiet hours off.
+        # Fall back to the shipped default windows instead.
+        print(f"Warning: cannot read {CONFIG_FILE} ({e}). "
+              f"Using default quiet hours from {EXAMPLE_CONFIG_FILE.name}.", file=sys.stderr)
+        try:
+            return json.loads(EXAMPLE_CONFIG_FILE.read_text())
+        except Exception:
+            return {"enabled": False}
 
 
 def _parse_time(t_str):
