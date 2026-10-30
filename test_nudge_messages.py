@@ -34,6 +34,13 @@ class TestMessagePools(unittest.TestCase):
             msgs = evening_nudge.get_messages("evening", evening_nudge.EVENING_MESSAGES)
         self.assertEqual(msgs, evening_nudge.EVENING_MESSAGES)
 
+    def test_string_custom_pool_falls_back_to_defaults(self):
+        # "evening": "Go outside" used to rotate through single characters.
+        config = {"messages": {"evening": "Go outside"}}
+        with patch.object(evening_nudge, "load_config", return_value=config):
+            msgs = evening_nudge.get_messages("evening", evening_nudge.EVENING_MESSAGES)
+        self.assertEqual(msgs, evening_nudge.EVENING_MESSAGES)
+
 
 if __name__ == "__main__":
     unittest.main()

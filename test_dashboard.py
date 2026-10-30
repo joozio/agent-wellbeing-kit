@@ -74,5 +74,32 @@ class TestDashboardEscaping(unittest.TestCase):
         self.assertIn(payload, out["errorDetailText"])
 
 
+@unittest.skipUnless(_playwright_available(), "node + playwright not installed")
+class TestDashboardDates(unittest.TestCase):
+    """state.json holds local dates; the dashboard must not compare them in UTC."""
+
+    STATE = {
+        "morning_nudge_sent_at": "2026-10-28T07:00:00",
+        "weekly_stats": {"routine_days": ["2026-10-26", "2026-10-28"]},
+    }
+
+    def check(self, tz, local_time):
+        out = render(self.STATE, tz=tz, fixed_time=local_time)
+        self.assertEqual(out["bars"], [True, False, True, False, False, False, False])
+        morning = [n for n in out["nudges"] if n["name"] == "Morning"][0]
+        self.assertTrue(morning["sent"])
+
+    def test_us_evening(self):
+        # 21:00 in New York is already Thursday in UTC.
+        self.check("America/New_York", "2026-10-28T21:00:00-04:00")
+
+    def test_sydney_morning(self):
+        # 08:00 in Sydney is still Tuesday in UTC.
+        self.check("Australia/Sydney", "2026-10-28T08:00:00+11:00")
+
+    def test_utc(self):
+        self.check("UTC", "2026-10-28T12:00:00Z")
+
+
 if __name__ == "__main__":
     unittest.main()

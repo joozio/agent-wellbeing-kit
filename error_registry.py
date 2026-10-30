@@ -181,11 +181,17 @@ def main():
 
     if args.scan:
         try:
-            lines = Path(args.scan).read_text().splitlines()
+            # Agent logs often carry stray non-UTF-8 bytes; never crash on them.
+            lines = Path(args.scan).read_text(errors="replace").splitlines()
         except FileNotFoundError:
             print(f"File not found: {args.scan}", file=sys.stderr)
             sys.exit(1)
+        except OSError as e:
+            print(f"Cannot read {args.scan}: {e.strerror}", file=sys.stderr)
+            sys.exit(1)
     elif args.feed:
+        if hasattr(sys.stdin, "reconfigure"):
+            sys.stdin.reconfigure(errors="replace")
         lines = sys.stdin.readlines()
     else:
         parser.print_help()

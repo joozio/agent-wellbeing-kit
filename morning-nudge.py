@@ -114,7 +114,7 @@ def followup_nudge(dry_run=False):
         "Body first, then the desk.",
     ]
     custom = load_config().get("messages", {}).get("followup", [])
-    pool = custom if custom else followup_defaults
+    pool = custom if isinstance(custom, list) and custom else followup_defaults
     msg = pool[datetime.now().timetuple().tm_yday % len(pool)]
 
     if dry_run:

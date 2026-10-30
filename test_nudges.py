@@ -80,6 +80,24 @@ class TestMorningNudge(StateTestCase):
         self.assertEqual(self.state(), {})
 
 
+class TestMorningFollowup(StateTestCase):
+
+    def test_string_custom_pool_is_not_split_into_characters(self):
+        config = {"messages": {"followup": "Go for a walk"}}
+        weekday = datetime(2026, 10, 28, 8, 0)  # Wednesday
+
+        class FakeNow(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return weekday
+
+        with patch.object(morning, "send_message", return_value=True) as send, \
+                patch.object(morning, "load_config", return_value=config), \
+                patch.object(morning, "datetime", FakeNow):
+            morning.followup_nudge()
+        self.assertGreater(len(send.call_args[0][0]), 1)
+
+
 class TestEveningNudges(StateTestCase):
 
     def test_bedtime_sends_once_per_day(self):

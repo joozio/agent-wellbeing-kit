@@ -41,7 +41,8 @@ BEDTIME_MESSAGES = [
 def get_messages(key, defaults):
     """Return the custom message pool from config, or the built-in defaults."""
     custom = load_config().get("messages", {}).get(key, [])
-    return custom if custom else defaults
+    # A plain string here would rotate through its characters, so require a list.
+    return custom if isinstance(custom, list) and custom else defaults
 
 
 def pick_message(messages):

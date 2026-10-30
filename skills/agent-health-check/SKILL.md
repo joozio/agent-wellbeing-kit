@@ -5,7 +5,7 @@ description: Detect silent agent failures and memory degradation. Use when asked
 
 # Agent Health Check
 
-Agents fail silently: they retry the same broken call for hours, or their memory files bloat and go stale until output quality drops. This skill catches both. Run the tools from the kit directory (adjust the path to where agent-wellbeing-kit is installed).
+Agents fail silently: they retry the same broken call for hours, or their memory files bloat and go stale until output quality drops. This skill catches both. Replace `/path/to/agent-wellbeing-kit` below with the directory where the kit is installed.
 
 ## Error scan
 
@@ -18,7 +18,7 @@ python3 /path/to/agent-wellbeing-kit/error_registry.py --scan /path/to/agent.log
 Or pipe recent output directly:
 
 ```bash
-tail -n 500 agent.log | python3 error_registry.py --feed
+tail -n 500 agent.log | python3 /path/to/agent-wellbeing-kit/error_registry.py --feed
 ```
 
 Exit 1 means alerts fired. How to read the output:
@@ -32,7 +32,7 @@ Timestamps, UUIDs, hex IDs, and numbers are stripped before fingerprinting, so t
 ## Memory health
 
 ```bash
-python3 memory_health.py --check /path/to/memory/
+python3 /path/to/agent-wellbeing-kit/memory_health.py --check /path/to/memory/
 ```
 
 - **bloat**: file over the size threshold. Compact it: summarize, archive old entries, split by topic.

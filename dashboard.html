@@ -82,6 +82,12 @@ function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 }
 
+// state.json dates are local (Python datetime.now()), so compare against the
+// local calendar date, not toISOString(), which is UTC.
+function localDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function render(state) {
   document.getElementById('loader').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
@@ -98,7 +104,7 @@ function render(state) {
   document.getElementById('quiet-status').innerHTML = qStatus;
 
   // Today's nudges
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDate(now);
   const nudges = [
     { name: 'Morning', key: 'morning_nudge_sent_at' },
     { name: 'Followup', key: 'morning_followup_sent_at' },
@@ -121,7 +127,7 @@ function render(state) {
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
     d.setDate(d.getDate() + i);
-    const ds = d.toISOString().slice(0, 10);
+    const ds = localDate(d);
     const done = routineDays.has(ds);
     const isPast = d <= now;
     const bar = document.createElement('div');
@@ -165,15 +171,15 @@ function render(state) {
 
 function loadSample() {
   render({
-    morning_nudge_sent_at: new Date().toISOString(),
-    evening_nudge_sent_at: new Date().toISOString(),
+    morning_nudge_sent_at: localDate(new Date()) + 'T07:00:00',
+    evening_nudge_sent_at: localDate(new Date()) + 'T19:30:00',
     weekly_stats: {
       routine_days: (() => {
         const days = [];
         const mon = new Date(); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
         for (let i = 0; i < 5; i++) {
           const d = new Date(mon); d.setDate(d.getDate() + i);
-          if (Math.random() > 0.3) days.push(d.toISOString().slice(0, 10));
+          if (Math.random() > 0.3) days.push(localDate(d));
         }
         return days;
       })()

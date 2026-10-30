@@ -2,6 +2,8 @@
 """Tests for error_registry module."""
 
 import io
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -115,6 +117,27 @@ class TestCli(unittest.TestCase):
         code, _ = self.scan("ERROR boom\n" * 3)
         self.assertEqual(code, 1)
         self.assertEqual(utils.load_state()["error_registry"]["repeating_count"], 1)
+
+    def test_non_utf8_log_is_scanned(self):
+        code, out = self.scan(b"ERROR bad \xff byte\n" * 3)
+        self.assertEqual(code, 1)
+        self.assertIn("Errors found: 3", out)
+
+    def test_directory_exits_one_without_traceback(self):
+        code, _ = self.run_cli("--scan", str(self.dir))
+        self.assertEqual(code, 1)
+
+    def test_feed_non_utf8_stdin(self):
+        # Mirrors `tail agent.log | error_registry.py --feed` under a UTF-8 locale.
+        state = self.dir / "feed-kit"
+        state.mkdir()
+        for name in ("error_registry.py", "utils.py"):
+            (state / name).write_text((Path(__file__).parent / name).read_text())
+        r = subprocess.run([sys.executable, str(state / "error_registry.py"), "--feed"],
+                           input=b"ERROR bad \xff byte\n", capture_output=True,
+                           env=dict(os.environ, PYTHONIOENCODING="utf-8"), timeout=30)
+        self.assertEqual(r.returncode, 0, r.stderr.decode())
+        self.assertIn(b"Errors found: 1", r.stdout)
 
     def test_missing_file_exits_one(self):
         code, _ = self.run_cli("--scan", str(self.dir / "nope.log"))

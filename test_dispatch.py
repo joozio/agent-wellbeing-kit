@@ -89,5 +89,48 @@ class TestDefaultSchedule(DispatchTestCase):
             self.assertEqual(self.dispatch(hour), [], hour)
 
 
+class TestConfiguredHours(DispatchTestCase):
+    """SETUP.md: change routine.bedtime / wake_time and the matching schedule entry."""
+
+    def test_bedtime_follows_config(self):
+        self.write_config({"bedtime": "22:30"})
+        self.assertEqual(self.dispatch("22"), ["evening-nudge.py --bedtime"])
+        self.assertEqual(self.dispatch("23"), [])
+
+    def test_bedtime_after_midnight(self):
+        self.write_config({"bedtime": "00:15"})
+        self.assertEqual(self.dispatch("00"), ["evening-nudge.py --bedtime"])
+
+    def test_wake_time_moves_morning_and_followup(self):
+        self.write_config({"wake_time": "06:00"})
+        self.assertEqual(self.dispatch("06"), ["morning-nudge.py"])
+        self.assertEqual(self.dispatch("07"), ["morning-nudge.py --followup"])
+        self.assertEqual(self.dispatch("08"), [])
+
+    def test_unparseable_times_fall_back_to_defaults(self):
+        self.write_config({"wake_time": "early", "bedtime": ""})
+        self.assertEqual(self.dispatch("07"), ["morning-nudge.py"])
+        self.assertEqual(self.dispatch("23"), ["evening-nudge.py --bedtime"])
+
+    def test_broken_config_falls_back_to_defaults(self):
+        (self.kit / "config.json").write_text("{not json")
+        self.assertEqual(self.dispatch("07"), ["morning-nudge.py"])
+        self.assertEqual(self.dispatch("23"), ["evening-nudge.py --bedtime"])
+
+
+@unittest.skipUnless(os.name == "posix", "cron is POSIX-only")
+class TestExecutable(unittest.TestCase):
+
+    def test_dispatch_is_executable(self):
+        # crontab entries in older installs call dispatch.sh directly.
+        self.assertTrue(os.access(KIT_DIR / "dispatch.sh", os.X_OK))
+
+    def test_cron_examples_call_through_bash(self):
+        for doc in (KIT_DIR / "examples" / "crontab.example", KIT_DIR / "SETUP.md"):
+            for line in doc.read_text().splitlines():
+                if line.rstrip().endswith("dispatch.sh") and line[:1].isdigit():
+                    self.assertIn("/bin/bash ", line, f"{doc.name}: {line}")
+
+
 if __name__ == "__main__":
     unittest.main()

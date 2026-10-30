@@ -9,7 +9,7 @@ The human configured quiet hours. Respect them. A notification that can wait unt
 
 ## Before sending anything to the human
 
-Run the quiet-hours check from the kit directory (adjust the path to where agent-wellbeing-kit is installed):
+Run the quiet-hours check (replace `/path/to/agent-wellbeing-kit` in every command here with the directory where the kit is installed):
 
 ```bash
 python3 /path/to/agent-wellbeing-kit/quiet_hours.py --check --tag "<short-tag>"
@@ -31,7 +31,7 @@ Pick a tag that names the message category (`build-status`, `daily-report`, `err
 A genuine emergency bypasses quiet hours in two ways:
 
 ```bash
-python3 quiet_hours.py --check --tag "server_down" --emergency
+python3 /path/to/agent-wellbeing-kit/quiet_hours.py --check --tag "server_down" --emergency
 ```
 
 or by using a tag containing one of the configured `emergency_keywords`. Reserve this for things the human would want to be woken up for: data loss, security incidents, payment failures, production down. A failed cron job at 2 AM is not an emergency.
@@ -39,7 +39,7 @@ or by using a tag containing one of the configured `emergency_keywords`. Reserve
 ## Checking status
 
 ```bash
-python3 quiet_hours.py --status
+python3 /path/to/agent-wellbeing-kit/quiet_hours.py --status
 ```
 
 Prints the active window name, or that quiet hours are off. Useful when planning when to deliver a batch of updates.

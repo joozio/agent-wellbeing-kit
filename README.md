@@ -81,6 +81,7 @@ Two ready-made agent skills ship in [skills/](skills/):
 For Claude Code, copy them into your skills directory:
 
 ```bash
+mkdir -p ~/.claude/skills
 cp -r skills/wellbeing-boundaries skills/agent-health-check ~/.claude/skills/
 ```
 

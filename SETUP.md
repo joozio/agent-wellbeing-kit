@@ -108,15 +108,15 @@ launchctl load ~/Library/LaunchAgents/com.agent.wellbeing.plist
 See `examples/crontab.example` or add these lines to your crontab (`crontab -e`):
 
 ```
-0 7 * * * /path/to/agent-wellbeing-kit/dispatch.sh
-0 8 * * 1-5 /path/to/agent-wellbeing-kit/dispatch.sh
-30 19 * * * /path/to/agent-wellbeing-kit/dispatch.sh
-0 23 * * * /path/to/agent-wellbeing-kit/dispatch.sh
+0 7 * * * /bin/bash /path/to/agent-wellbeing-kit/dispatch.sh
+0 8 * * 1-5 /bin/bash /path/to/agent-wellbeing-kit/dispatch.sh
+30 19 * * * /bin/bash /path/to/agent-wellbeing-kit/dispatch.sh
+0 23 * * * /bin/bash /path/to/agent-wellbeing-kit/dispatch.sh
 ```
 
 ### Claude Code / AI Agent
 
-The `skills/` directory ships two agent skills: `wellbeing-boundaries` (quiet-hours gating for outbound messages) and `agent-health-check` (error + memory scans with interpretation). Copy them into `~/.claude/skills/` and update the kit path inside each SKILL.md.
+The `skills/` directory ships two agent skills: `wellbeing-boundaries` (quiet-hours gating for outbound messages) and `agent-health-check` (error + memory scans with interpretation). Copy them into `~/.claude/skills/` (`mkdir -p ~/.claude/skills` first on a fresh machine) and update the kit path inside each SKILL.md.
 
 Alternatively, point your agent at this folder in CLAUDE.md. See `examples/CLAUDE.md` for a ready-to-paste snippet. Your agent can call `quiet_hours.py --check` before sending notifications to respect your boundaries.
 
@@ -124,7 +124,7 @@ Alternatively, point your agent at this folder in CLAUDE.md. See `examples/CLAUD
 
 Everything is in `config.json`. Common changes:
 
-- **Different wake time**: Change `routine.wake_time`
+- **Different wake time**: Change `routine.wake_time` and move the 07:00 and 08:00 schedule entries to your wake hour and the hour after
 - **No morning followup**: Remove the 08:00 schedule entry
 - **Different bedtime**: Change `routine.bedtime` and the 23:00 schedule
 - **Add lunch break**: Add a new quiet_hours window
