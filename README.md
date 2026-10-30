@@ -26,6 +26,7 @@ This kit gives your agent the concept of "not now" and gives you visibility into
 git clone https://github.com/joozio/agent-wellbeing-kit.git
 cd agent-wellbeing-kit
 cp config.example.json config.json    # then edit with your settings
+chmod 600 config.json                 # it will hold your bot token / webhook URL
 python3 morning-nudge.py --dry-run
 ```
 

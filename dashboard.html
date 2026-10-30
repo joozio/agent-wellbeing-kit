@@ -77,6 +77,11 @@
 <script>
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
+// state.json is user-supplied: escape every value before it reaches innerHTML.
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+}
+
 function render(state) {
   document.getElementById('loader').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
@@ -132,7 +137,7 @@ function render(state) {
   const memDet = document.getElementById('memory-detail');
   if (mem.overall) {
     const cls = mem.overall === 'healthy' ? 'ok' : mem.overall === 'degraded' ? 'warn' : 'err';
-    memEl.innerHTML = `<span class="${cls}">${mem.overall.toUpperCase()}</span>`;
+    memEl.innerHTML = `<span class="${cls}">${esc(String(mem.overall).toUpperCase())}</span>`;
     const s = mem.summary || {};
     memDet.textContent = `${s.total || 0} files checked, ${s.warn || 0} warnings`;
   } else {
@@ -147,10 +152,10 @@ function render(state) {
   if (err.last_scan) {
     const hasIssues = (err.repeating_count || 0) > 0 || (err.loop_count || 0) > 0;
     const cls = hasIssues ? 'warn' : 'ok';
-    errEl.innerHTML = `<span class="${cls}">${err.total_errors || 0} errors</span>`;
+    errEl.innerHTML = `<span class="${cls}">${esc(err.total_errors || 0)} errors</span>`;
     const alerts = err.alerts || [];
     errDet.innerHTML = alerts.length
-      ? alerts.map(a => `<div class="error-item err">${a}</div>`).join('')
+      ? alerts.map(a => `<div class="error-item err">${esc(a)}</div>`).join('')
       : '<div class="muted">All clear</div>';
   } else {
     errEl.innerHTML = '<span class="muted">No data</span>';

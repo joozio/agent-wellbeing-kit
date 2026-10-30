@@ -70,7 +70,8 @@ def should_send_message(tag="", is_emergency=False, now=None):
         return True
 
     emergency_keywords = config.get("emergency_keywords", [])
-    if any(kw.lower() in tag.lower() for kw in emergency_keywords):
+    # Skip empty keywords: "" is a substring of every tag and would let everything through.
+    if any(kw and kw.lower() in tag.lower() for kw in emergency_keywords):
         return True
 
     window_name = is_quiet_hours(now)

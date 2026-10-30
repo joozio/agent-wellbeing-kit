@@ -7,6 +7,7 @@ Supports: cli, imessage, telegram, slack, webhook.
 """
 
 import json
+import os
 import subprocess
 import sys
 import urllib.request
@@ -20,6 +21,22 @@ def _load_config():
         return json.loads(CONFIG_FILE.read_text())
     except Exception:
         return {}
+
+
+SECRET_KEYS = ("telegram_bot_token", "slack_webhook_url", "webhook_url")
+
+
+def _warn_if_config_exposed(messaging):
+    """Warn when config.json holds credentials but other users can read it."""
+    if os.name != "posix" or not any(messaging.get(k) for k in SECRET_KEYS):
+        return
+    try:
+        mode = CONFIG_FILE.stat().st_mode
+    except OSError:
+        return
+    if mode & 0o077:
+        print(f"Warning: {CONFIG_FILE} holds messaging credentials and is readable by "
+              f"other users. Run: chmod 600 {CONFIG_FILE}", file=sys.stderr)
 
 
 def _applescript_escape(text):
@@ -39,6 +56,7 @@ def send_message(text, msg_type="nudge"):
     config = _load_config()
     messaging = config.get("messaging", {"channel": "cli"})
     channel = messaging.get("channel", "cli")
+    _warn_if_config_exposed(messaging)
 
     if channel == "cli":
         print(f"[wellbeing] {text}")

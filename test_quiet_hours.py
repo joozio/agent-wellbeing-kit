@@ -1,9 +1,36 @@
 #!/usr/bin/env python3
 """Basic tests for quiet_hours module."""
 
+import json
+import tempfile
 import unittest
 from datetime import datetime, time
+from pathlib import Path
+from unittest.mock import patch
+
+import quiet_hours
 from quiet_hours import _in_window, is_quiet_hours, should_send_message
+
+EXAMPLE_CONFIG = Path(__file__).resolve().parent / "config.example.json"
+NIGHT = datetime(2026, 10, 30, 3, 0)
+MIDDAY = datetime(2026, 10, 30, 12, 0)
+
+
+class ConfigTestCase(unittest.TestCase):
+    """Runs quiet_hours against a temporary config.json."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.config_path = Path(self.tmpdir.name) / "config.json"
+        patcher = patch.object(quiet_hours, "CONFIG_FILE", self.config_path)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.addCleanup(self.tmpdir.cleanup)
+
+    def write_config(self, **overrides):
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        config.update(overrides)
+        self.config_path.write_text(json.dumps(config))
 
 
 class TestTimeWindows(unittest.TestCase):
@@ -42,6 +69,17 @@ class TestEmergencyOverride(unittest.TestCase):
     def test_emergency_always_sends(self):
         """Emergency flag should bypass quiet hours."""
         self.assertTrue(should_send_message(tag="anything", is_emergency=True))
+
+
+class TestEmergencyKeywords(ConfigTestCase):
+
+    def test_empty_keyword_does_not_bypass_quiet_hours(self):
+        self.write_config(emergency_keywords=[""])
+        self.assertFalse(should_send_message(tag="build-status", now=NIGHT))
+
+    def test_keyword_in_tag_bypasses_quiet_hours(self):
+        self.write_config(emergency_keywords=["", "server_down"])
+        self.assertTrue(should_send_message(tag="prod-server_down", now=NIGHT))
 
 
 if __name__ == "__main__":

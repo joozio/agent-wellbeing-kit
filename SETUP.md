@@ -7,7 +7,9 @@ Get running in 5 minutes.
 1. Copy the config template:
    ```bash
    cp config.example.json config.json
+   chmod 600 config.json
    ```
+   `chmod 600` keeps your bot token or webhook URL private from other users on the machine.
 
 2. Edit `config.json`:
    - Set your `location` (city name, for weather-based morning suggestions)
